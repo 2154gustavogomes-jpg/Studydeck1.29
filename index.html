@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StudyDeck – Da matriz do teste a slides de estudo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<style>
+:root{--bg:#f6f5ff;--card:#fff;--ink:#1d1b3a;--mute:#6a6890;--pri:#5b4bdb;--pri-ink:#fff;--line:#dedcf5;--acc:#ffb703;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14132a;--card:#1f1e3d;--ink:#eeedff;--mute:#a3a1c9;--pri:#8b7dff;--pri-ink:#14132a;--line:#35336a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14132a;--card:#1f1e3d;--ink:#eeedff;--mute:#a3a1c9;--pri:#8b7dff;--pri-ink:#14132a;--line:#35336a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:1.9rem;margin:.2em 0}
+.sub{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+label{display:block;font-weight:600;margin:0 0 6px}
+select,textarea,input[type=text]{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:130px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.row{grid-template-columns:1fr}}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--mute);cursor:pointer;margin-bottom:12px}
+.drop.on{border-color:var(--pri);color:var(--ink)}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px 20px;background:var(--pri);color:var(--pri-ink);cursor:pointer}
+button.alt{background:transparent;color:var(--pri);border:1px solid var(--pri)}
+button:disabled{opacity:.5;cursor:default}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+#status{color:var(--mute);font-size:.95rem}
+.slide{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px;background:var(--card);border-left:6px solid var(--pri)}
+.slide h3{margin:0 0 8px}
+.slide ul{margin:0 0 8px;padding-left:20px}
+.ex,.tip{border-radius:10px;padding:8px 12px;margin-top:8px;font-size:.95rem;background:var(--bg)}
+.tip{border-left:4px solid var(--acc)}
+.err{color:#d6336c;font-weight:600}
+img.ill{display:block;width:100%;max-width:360px;border-radius:12px;margin:8px 0;background:#fff}
+#pres{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#pres[hidden]{display:none}
+#pbar{height:6px;background:var(--line)}#pbar i{display:block;height:100%;background:var(--pri);width:0;transition:width .3s}
+#pclose{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;padding:8px 14px;z-index:2}
+#pstage{flex:1;overflow:auto;padding:5vh 7vw;display:flex;flex-direction:column;justify-content:center}
+#pstage h2{font-size:clamp(1.5rem,4.2vw,3rem);color:var(--pri);margin:0 0 .5em;padding-right:60px}
+#pstage ul{margin:0;padding-left:1.2em}
+#pstage li{font-size:clamp(1.1rem,2.6vw,1.9rem);margin:.4em 0}
+.pc.two{display:grid;grid-template-columns:1.2fr 1fr;gap:3vw;align-items:center}
+@media(max-width:700px){.pc.two{grid-template-columns:1fr}}
+.pc img{width:100%;border-radius:16px;background:#fff}
+#pstage .ex,#pstage .tip{font-size:clamp(.95rem,2vw,1.4rem);margin-top:2vh}
+#pstage.cover{background:var(--pri);color:var(--pri-ink);text-align:center;align-items:center}
+#pstage.cover h1{font-size:clamp(2rem,6vw,4.5rem);margin:0 0 .3em}
+#pstage.cover p{font-size:clamp(1.1rem,2.6vw,1.8rem);margin:0}
+#pfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;gap:10px}
+#pcount{color:var(--mute);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <h1>📚 StudyDeck</h1>
+  <p class="sub">Carrega a matriz do teu teste (a lista de conteúdos que vão sair) e recebe slides de estudo adaptados ao teu ano de escolaridade — do 1.º ano ao ensino superior.</p>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="grade">Ano de escolaridade / nível</label>
+        <select id="grade"></select>
+      </div>
+      <div>
+        <label for="subject">Disciplina (opcional)</label>
+        <input type="text" id="subject" placeholder="ex.: Matemática, História, Biologia">
+      </div>
+    </div>
+    <div style="height:14px"></div>
+    <label>Matriz do teste</label>
+    <div class="drop" id="drop">📎 Clica ou arrasta ficheiros para aqui: PDF, PowerPoint (.pptx), Word (.docx), texto ou fotos — podes combinar vários com a caixa de texto abaixo</div>
+    <input type="file" id="file" accept=".txt,.md,.csv,.json,.pdf,.pptx,.docx,image/*" multiple hidden>
+    <textarea id="text" placeholder="Cola ou escreve aqui o texto da matriz (conteúdos, competências, cotações). As fotos e ficheiros que adicionares acima são usados em conjunto com este texto."></textarea>
+    <div style="height:14px"></div>
+    <div class="actions">
+      <button id="go">✨ Criar slides de estudo</button>
+      <label style="display:inline-flex;gap:6px;align-items:center;margin:0;font-weight:500"><input type="checkbox" id="ill" checked> Com ilustrações</label>
+      <span id="status"></span>
+    </div>
+  </div>
+
+  <div id="out" hidden>
+    <div class="actions" style="margin-bottom:14px">
+      <button id="dl">⬇️ Descarregar PowerPoint (.pptx)</button>
+      <button class="alt" id="pp">▶️ Apresentar</button>
+      <button class="alt" id="redo">Gerar de novo</button>
+    </div>
+    <div id="slides"></div>
+  </div>
+</main>
+<div id="pres" hidden>
+<div id="pbar"><i></i></div>
+<button class="alt" id="pclose" aria-label="Fechar">✕</button>
+<div id="pstage"></div>
+<div id="pfoot"><button id="pprev">‹ Anterior</button><span id="pcount"></span><button id="pnext">Seguinte ›</button></div>
+</div>
+
+<script>
+const GRADES=["1.º ano","2.º ano","3.º ano","4.º ano","5.º ano","6.º ano","7.º ano","8.º ano","9.º ano","10.º ano","11.º ano","12.º ano","Ensino superior / licenciatura"];
+const gSel=document.getElementById("grade");
+GRADES.forEach((g,i)=>{const o=document.createElement("option");o.value=g;o.textContent=g;if(i===8)o.selected=true;gSel.appendChild(o)});
+const $=id=>document.getElementById(id);
+let imgs=[],deck=null;
+
+function setStatus(t,err){const s=$("status");s.textContent=t;s.className=err?"err":""}
+
+const drop=$("drop"),fileIn=$("file");
+drop.onclick=()=>fileIn.click();
+["dragover","dragenter"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("on")}));
+["dragleave","drop"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove("on")}));
+drop.addEventListener("drop",ev=>loadFiles(ev.dataTransfer.files));
+fileIn.onchange=()=>loadFiles(fileIn.files);
+function addText(t){const el=$("text");el.value=(el.value?el.value+"\n\n":"")+t}
+const dec=s=>s.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&");
+async function readZip(f,re,label){
+  const zip=await JSZip.loadAsync(await f.arrayBuffer());
+  const num=n=>parseInt((n.match(/(\d+)\.xml$/)||[0,0])[1]);
+  const names=Object.keys(zip.files).filter(n=>re.test(n)).sort((a,b)=>num(a)-num(b));
+  const out=[];
+  for(const n of names){
+    const x=await zip.files[n].async("string");
+    const lines=x.split(/<\/(?:a|w):p>/).map(p=>[...p.matchAll(/<(?:a|w):t(?:\s[^>]*)?>([^<]*)<\/(?:a|w):t>/g)].map(m=>dec(m[1])).join("")).filter(Boolean);
+    if(lines.length)out.push((label?label+" "+num(n)+":\n":"")+lines.join("\n"));
+  }
+  return out.join("\n\n");
+}
+async function readPdf(f){
+  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;
+  let txt="";
+  for(let i=1;i<=Math.min(pdf.numPages,40);i++){
+    const pg=await pdf.getPage(i),c=await pg.getTextContent();
+    txt+=c.items.map(it=>it.str+(it.hasEOL?"\n":" ")).join("")+"\n\n";
+  }
+  if(txt.replace(/\s/g,"").length>80){addText(txt);return "text"}
+  let n=0;
+  for(let i=1;i<=Math.min(pdf.numPages,4)&&imgs.length<4;i++){
+    const pg=await pdf.getPage(i),vp=pg.getViewport({scale:1.5}),cv=document.createElement("canvas");
+    cv.width=vp.width;cv.height=vp.height;
+    await pg.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+    const b=await new Promise(r=>cv.toBlob(r,"image/jpeg",.85));
+    if(b){imgs.push(new File([b],"page"+i+".jpg",{type:"image/jpeg"}));n++}
+  }
+  return "scan:"+n;
+}
+async function loadFiles(list){
+  let note=[];
+  for(const f of list){
+    if(f.type.startsWith("image/")){if(imgs.length<4)imgs.push(f);}
+    else if(/\.(txt|md|csv|json)$/i.test(f.name)){const t=$("text");t.value=(t.value?t.value+"\n\n":"")+await f.text();note.push("📄 "+f.name)}
+    else if(/\.pdf$/i.test(f.name)||/\.pptx$/i.test(f.name)||/\.docx$/i.test(f.name)){
+      drop.textContent="⏳ A ler "+f.name+"…";
+      try{
+        if(/\.pdf$/i.test(f.name)){const r=await readPdf(f);note.push("📕 "+f.name+(r==="text"?"":" (digitalizado, lido como imagens)"))}
+        else if(/\.pptx$/i.test(f.name)){const t=await readZip(f,/^ppt\/slides\/slide\d+\.xml$/,"Slide");if(!t)throw 0;addText(t);note.push("📊 "+f.name)}
+        else{const t=await readZip(f,/^word\/document\.xml$/,"");if(!t)throw 0;addText(t);note.push("📝 "+f.name)}
+      }catch(e){note.push("⚠️ não consegui ler "+f.name+" (cola antes o texto)")}
+    }
+    else note.push("⚠️ "+f.name+" não suportado (.ppt/.doc antigo? guarda como .pptx/.docx ou cola o texto)");
+  }
+  if(imgs.length)note.push("🖼️ "+imgs.length+" foto"+(imgs.length>1?"s":"")+" pronta"+(imgs.length>1?"s":"")+" (máx. 4)");
+  drop.textContent=note.join(" · ")+" — clica para adicionar mais";
+  fileIn.value="";
+}
+
+function bandInfo(g){
+  const i=GRADES.indexOf(g);
+  if(i<=2)return "Ages 6-8. Very simple words, short sentences, concrete everyday examples, fun tone, max 3 short bullets per slide, emojis welcome.";
+  if(i<=5)return "Ages 9-11. Simple clear language, relatable examples, short bullets, friendly tone, a few emojis.";
+  if(i<=8)return "Ages 12-14. Clear language, define new terms, examples from daily life, mild humor.";
+  if(i<=11)return "Ages 15-18. Precise terminology, worked examples, exam-oriented tips, connect ideas between topics.";
+  return "University level. Rigorous academic language, formal definitions, derivations/frameworks where relevant, critical thinking, references to core concepts.";
+}
+
+async function generate(){
+  const matrix=$("text").value.trim();
+  if(!matrix&&!imgs.length){setStatus("Adiciona primeiro a matriz (ficheiro, foto ou texto).",true);return}
+  $("go").disabled=true;$("redo").disabled=true;
+  setStatus("A pedir ao Claude… demora cerca de 20 a 40 segundos.");
+  try{
+    const sample=await claude.use("sample");
+    if(!sample){setStatus("A geração com IA não está disponível nesta vista. Abre a página no Claude e tenta outra vez.",true);return}
+    const grade=gSel.value,subj=$("subject").value.trim();
+    const prompt=`You are an expert teacher creating a STUDY deck for a student.
+Student level: ${grade}. ${bandInfo(grade)}
+Subject: ${subj||"(infer from the matrix)"}.
+Below is the student's TEST MATRIX (the topics/skills/descriptors the test will assess${imgs.length?"; part of it is in the attached photo(s), read them carefully and combine with any text":""}).
+Write the ENTIRE deck (titles, bullets, examples, tips, questions) in European Portuguese (pt-PT), even if the matrix is in another language. Use Portuguese school terminology.
+Cover EVERY topic in the matrix, giving more slides to heavier-weighted topics. Teach the content itself (explanations, key formulas/definitions/facts, a worked example), do not just repeat the matrix.
+Structure: 1 overview slide (what will be tested + how to study), then for each topic 1-3 slides, then 1 slide "Exercícios de treino" (4-6 questions with short answers, adapted to the level), and 1 final slide "Plano de estudo e dicas" (a realistic 5-day plan).
+Return ONLY JSON (no markdown fences) of this exact shape:
+{"title":"...","subtitle":"...","slides":[{"title":"...","bullets":["...","..."],"example":"optional worked example","tip":"optional memory tip"}]}
+Keep each bullet under 22 words (under 12 for ages 6-11). Max 5 bullets per slide.
+${matrix?"\nTEST MATRIX:\n"+matrix.slice(0,20000):""}`;
+    const opts={modelTier:"complex",cache:false};
+    if(imgs.length)opts.images=imgs;
+    const res=await sample.json(prompt,opts);
+    deck=res;render();if($("ill").checked)await illustrate(sample);
+    setStatus("");
+  }catch(e){
+    console.error(e);
+    setStatus(e&&e.code==="not_granted"?"A permissão para usar o Claude foi recusada.":"Não foi possível gerar os slides ("+(e&&e.message||"erro")+"). Tenta outra vez.",true);
+  }finally{$("go").disabled=false;$("redo").disabled=false}
+}
+
+function render(quiet){
+  $("out").hidden=false;
+  const box=$("slides");box.textContent="";
+  const head=document.createElement("div");head.className="slide";
+  const h=document.createElement("h3");h.textContent=deck.title;
+  const p=document.createElement("div");p.textContent=deck.subtitle||"";
+  head.append(h,p);box.appendChild(head);
+  (deck.slides||[]).forEach((s,i)=>{
+    const d=document.createElement("div");d.className="slide";
+    const t=document.createElement("h3");t.textContent=(i+1)+". "+s.title;d.appendChild(t);
+    const ul=document.createElement("ul");
+    (s.bullets||[]).forEach(b=>{const li=document.createElement("li");li.textContent=b;ul.appendChild(li)});
+    d.appendChild(ul);if(s.png){const im=document.createElement("img");im.src=s.png;im.className="ill";im.alt="";d.appendChild(im)}
+    if(s.example){const e=document.createElement("div");e.className="ex";e.textContent="✏️ "+s.example;d.appendChild(e)}
+    if(s.tip){const e=document.createElement("div");e.className="tip";e.textContent="💡 "+s.tip;d.appendChild(e)}
+    box.appendChild(d);
+  });
+  if(!quiet)$("out").scrollIntoView({behavior:"smooth"});
+}
+
+async function download(){
+  const idx=GRADES.indexOf(gSel.value),young=idx<=5;
+  const font=young?"Comic Sans MS":"Calibri";
+  const C=young?{bg:"FFF8E7",pri:"FF6B35",ink:"2B2D42",acc:"2EC4B6"}:{bg:"F6F5FF",pri:"5B4BDB",ink:"1D1B3A",acc:"FFB703"};
+  const pptx=new PptxGenJS();pptx.layout="LAYOUT_WIDE";
+  let s=pptx.addSlide();s.background={color:C.pri};
+  s.addText(deck.title,{x:.7,y:2.2,w:11.9,h:1.6,fontSize:young?44:38,bold:true,color:"FFFFFF",fontFace:font});
+  s.addText(deck.subtitle||"",{x:.7,y:3.9,w:11.9,h:1,fontSize:20,color:"FFFFFF",fontFace:font});
+  s.addText(gSel.value,{x:.7,y:6.5,w:6,h:.5,fontSize:14,color:"FFFFFF",fontFace:font});
+  (deck.slides||[]).forEach(sl=>{
+    const s=pptx.addSlide();s.background={color:C.bg};
+    s.addShape(pptx.ShapeType.rect,{x:0,y:0,w:.25,h:7.5,fill:{color:C.pri}});
+    s.addText(sl.title,{x:.7,y:.35,w:12,h:.9,fontSize:30,bold:true,color:C.pri,fontFace:font,fit:"shrink"});
+    const hasExtra=sl.example||sl.tip;
+    if(sl.png)s.addImage({data:sl.png.replace(/^data:/,""),x:8.3,y:1.4,w:4.13,h:3.1});
+    s.addText((sl.bullets||[]).map(b=>({text:b,options:{bullet:true,breakLine:true}})),
+      {x:.7,y:1.4,w:sl.png?7.2:12,h:hasExtra?3.1:5.4,fontSize:young?24:20,color:C.ink,fontFace:font,valign:"top",paraSpaceAfter:8,fit:"shrink"});
+    let y=4.6;
+    if(sl.example){s.addText("✏️ "+sl.example,{x:.7,y,w:12,h:1.1,fontSize:16,color:C.ink,fontFace:font,fill:{color:"FFFFFF"},margin:10,fit:"shrink"});y+=1.25}
+    if(sl.tip){s.addText("💡 "+sl.tip,{x:.7,y,w:12,h:.9,fontSize:16,italic:true,color:C.ink,fontFace:font,fill:{color:C.acc,transparency:70},margin:10,fit:"shrink"})}
+  });
+  try{
+    const data=await pptx.write({outputType:"arraybuffer"});
+    const downloads=await claude.use("downloads");
+    if(!downloads){setStatus("Os downloads não estão disponíveis nesta vista.",true);return}
+    const name=(deck.title||"study-slides").replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g,"-").slice(0,60)+".pptx";
+    await downloads.save({filename:name,data});
+  }catch(e){if(!e||e.code!=="declined")setStatus("Falha no download: "+(e&&e.message||"erro"),true)}
+}
+/* ---------- illustrations ---------- */
+function cleanSvg(s){
+  s=String(s||"").trim();const m=s.match(/<svg[\s\S]*<\/svg>/i);if(!m)return null;s=m[0];
+  s=s.replace(/<(script|foreignObject|image|iframe)[\s\S]*?<\/\1>/gi,"").replace(/\son\w+=("[^"]*"|'[^']*')/gi,"").replace(/href=("[^"]*"|'[^']*')/gi,"");
+  if(!/xmlns=/.test(s))s=s.replace(/<svg/i,'<svg xmlns="http://www.w3.org/2000/svg"');
+  if(!/viewBox=/i.test(s))s=s.replace(/<svg/i,'<svg viewBox="0 0 400 300"');
+  return s.replace(/<svg([^>]*)>/i,(a,b)=>"<svg"+b.replace(/\s(width|height)=("[^"]*"|'[^']*')/g,"")+' width="800" height="600">');
+}
+function svgToPng(svg){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{try{const c=document.createElement("canvas");c.width=800;c.height=600;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,800,600);x.drawImage(im,0,0,800,600);res(c.toDataURL("image/png"))}catch(e){rej(e)}};im.onerror=rej;im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)})}
+async function illustrate(sample){
+  const sl=deck.slides||[],n=5,young=GRADES.indexOf(gSel.value)<=5;
+  for(let i=0;i<sl.length;i+=n){
+    const part=sl.slice(i,i+n);
+    setStatus("A criar ilustrações… "+Math.min(i+n,sl.length)+"/"+sl.length);
+    try{
+      const list=part.map((s,k)=>(k+1)+". "+s.title+": "+(s.bullets||[]).join(" | ")).join("\n");
+      const r=await sample.json(`Create simple flat educational SVG illustrations for these ${part.length} study slides (level: ${gSel.value}). One SVG per slide that visually explains its main idea (labelled diagram, simple scene, graph, number line, timeline, process, etc.). Style: ${young?"cute, colourful, friendly cartoon-like":"clean, diagrammatic, professional"}.
+Rules: viewBox='0 0 400 300'; only basic shapes (rect, circle, ellipse, line, polyline, polygon, path, text, g); no scripts, no images, no external fonts; font-family sans-serif; labels in European Portuguese, max 3 words each, font-size at least 16; palette #5b4bdb #ff6b35 #2ec4b6 #ffb703 #1d1b3a #f1efff; keep each SVG under 1800 characters; everything inside the viewBox; use SINGLE quotes for all SVG attributes.
+Slides:\n${list}
+Return ONLY JSON: {"svgs":["<svg ...>...</svg>", ...]} with exactly ${part.length} items in the same order.`,{modelTier:"default",cache:false});
+      for(let k=0;k<part.length;k++){const svg=cleanSvg((r.svgs||[])[k]);if(!svg)continue;try{part[k].png=await svgToPng(svg)}catch(e){}}
+      render(true);
+    }catch(e){console.error(e);if(e&&(e.code==="rate_limited"||e.code==="not_granted"))break}
+  }
+}
+/* ---------- presentation mode ---------- */
+const pres=$("pres");let pi=0;
+function el(t,txt,c){const e=document.createElement(t);e.textContent=txt;if(c)e.className=c;return e}
+function pAll(){return [{cover:1,title:deck.title,sub:deck.subtitle}].concat(deck.slides||[])}
+function pShow(){
+  const a=pAll(),s=a[pi],st=$("pstage");st.textContent="";st.className=s.cover?"cover":"";st.scrollTop=0;
+  if(s.cover){st.append(el("h1",s.title),el("p",s.sub||""))}
+  else{
+    st.appendChild(el("h2",s.title));
+    const g=document.createElement("div");g.className="pc"+(s.png?" two":"");
+    const ul=document.createElement("ul");(s.bullets||[]).forEach(b=>ul.appendChild(el("li",b)));g.appendChild(ul);
+    if(s.png){const im=document.createElement("img");im.src=s.png;im.alt="";g.appendChild(im)}
+    st.appendChild(g);
+    if(s.example)st.appendChild(el("div","✏️ "+s.example,"ex"));
+    if(s.tip)st.appendChild(el("div","💡 "+s.tip,"tip"));
+  }
+  $("pcount").textContent=(pi+1)+" / "+a.length;
+  $("pbar").firstElementChild.style.width=((pi+1)/a.length*100)+"%";
+  $("pprev").disabled=pi===0;$("pnext").disabled=pi===a.length-1;
+}
+function pGo(d){pi=Math.max(0,Math.min(pAll().length-1,pi+d));pShow()}
+function openP(){if(!deck)return;pi=0;pres.hidden=false;pShow();try{if(pres.requestFullscreen)pres.requestFullscreen().catch(()=>{})}catch(e){}}
+function closeP(){pres.hidden=true;try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}}
+$("pp").onclick=openP;$("pclose").onclick=closeP;$("pprev").onclick=()=>pGo(-1);$("pnext").onclick=()=>pGo(1);
+document.addEventListener("keydown",e=>{
+  if(pres.hidden)return;
+  if(["ArrowRight","PageDown"," ","Enter"].includes(e.key)){e.preventDefault();pGo(1)}
+  else if(["ArrowLeft","PageUp","Backspace"].includes(e.key)){e.preventDefault();pGo(-1)}
+  else if(e.key==="Escape")closeP();
+});
+let tx=null;
+pres.addEventListener("touchstart",e=>{tx=e.touches[0].clientX},{passive:true});
+pres.addEventListener("touchend",e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>60)pGo(dx<0?1:-1)},{passive:true});
+$("go").onclick=generate;$("redo").onclick=generate;$("dl").onclick=download;
+</script>
+</body>
+</html>
